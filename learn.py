@@ -22,10 +22,12 @@ import argparse
 import gymnasium as gym
 import numpy as np
 import torch
+import pybullet
 from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 from gym_pybullet_drones.utils.Logger import Logger
 from gym_pybullet_drones.envs.HoverAviary import HoverAviary
@@ -39,7 +41,7 @@ DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 
 DEFAULT_OBS = ObservationType('kin') # 'kin' or 'rgb'
-DEFAULT_ACT = ActionType('one_d_pid') # 'rpm' or 'pid' or 'vel' or 'one_d_rpm' or 'one_d_pid'
+DEFAULT_ACT = ActionType('one_d_rpm') # 'rpm' or 'pid' or 'vel' or 'one_d_rpm' or 'one_d_pid'
 DEFAULT_AGENTS = 2
 DEFAULT_MA = False
 
@@ -68,20 +70,41 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
     print('[INFO] Observation space:', train_env.observation_space)
 
     #### Ablations on a Sequential Neural Network #######################################
-    sequential = torch.nn.Sequential(
+    # class CustomPolicy(torch.nn.Module):
+    #     def __init__(self, obs_space):
+    #         super().__init__(obs_space)
+    #         width = 32
+    #         self.sequential = torch.nn.Sequential(
+    #             torch.nn.LazyLinear(width),
+    #             torch.nn.Tanh(),
+    #             torch.nn.LazyLinear(width),
+    #             torch.nn.Tanh(),
+    #             torch.nn.LazyLinear(width),
+    #             torch.nn.Tanh(),
+    #         )
 
-    )
+    #     def forward(self, x):
+    #         return self.sequential(x)
+    
+
+    # policy_kwargs = dict(
+    #     features_extractor_class=CustomPolicy
+    #     )
+    
+    policy_kwargs=dict(activation_fn=torch.nn.Tanh, net_arch=dict(pi=[64], vf=[64]))
     #### Train the model #######################################
     model = PPO('MlpPolicy',
                 train_env,
                 # tensorboard_log=filename+'/tb/',
+                policy_kwargs=policy_kwargs,
                 verbose=1)
+    print(model.policy)
 
     #### Target cumulative rewards (problem-dependent) ##########
     if DEFAULT_ACT == ActionType.ONE_D_RPM:
         target_reward = 474.15 if not multiagent else 949.5
     else:
-        target_reward = 500. if not multiagent else 920.
+        target_reward = 467. if not multiagent else 920.
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=target_reward,
                                                      verbose=1)
     eval_callback = EvalCallback(eval_env,
@@ -94,7 +117,7 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
                                  render=False)
     model.learn(total_timesteps=int(1e4) if local else int(1e2), # shorter training in GitHub Actions pytest
                 callback=eval_callback,
-                log_interval=100)
+                log_interval=1000)
 
     #### Save the model ########################################
     model.save(filename+'/final_model.zip')
@@ -125,6 +148,8 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
     #### Show (and record a video of) the model's performance ##
     if not multiagent:
         test_env = HoverAviary(gui=gui,
+                               initial_xyzs=[[1,1,1]],
+                               initial_rpys=[[0,0,0]],
                                obs=DEFAULT_OBS,
                                act=DEFAULT_ACT,
                                record=record_video)
@@ -148,7 +173,13 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
                                               )
     print("\n\n\nMean reward ", mean_reward, " +- ", std_reward, "\n\n")
 
-    obs, info = test_env.reset(seed=42, options={})
+    obs, info = test_env.reset(seed=30, options={})
+
+    model_id= test_env.getDroneIds()[0]
+    print(model_id)
+    print(test_env.vel)
+    test_env.vel[0] = [10,10,10]
+    #test_env.INIT_XYZS[0] = [10,10,10]
     start = time.time()
     test_env.EPISODE_LEN_SEC = 30
     for i in range((test_env.EPISODE_LEN_SEC+2)*test_env.CTRL_FREQ):
@@ -190,6 +221,9 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
 
     if plot and DEFAULT_OBS == ObservationType.KIN:
         logger.plot()
+    print(model_id)
+    print(info)
+    print(test_env.vel)
 
 if __name__ == '__main__':
     #### Define and parse (optional) arguments for the script ##
