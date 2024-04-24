@@ -16,8 +16,8 @@ if __name__ == '__main__':
                              env_kwargs=dict(
                                  obs=OBSERVATION_TYPE,
                                  act=ACTION_TYPE,
-                             ),
-                             seed=0)
+                                 gui=False
+                             ))
 
     eval_env = Aviary(obs=OBSERVATION_TYPE,
                       act=ACTION_TYPE)
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     model = A2C('MlpPolicy', train_env, policy_kwargs=POLICY_ARGS)
 
-    REWARD_THRESHOLD = 42
+    REWARD_THRESHOLD = 467
 
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=REWARD_THRESHOLD,
                                                      verbose=True)
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                                  log_path='logs/',
                                  eval_freq=1000,
                                  deterministic=True,
-                                 render=False)
+                                 render=True)
 
     TOTAL_TIMESTEPS = int(1e7)
 
@@ -48,4 +48,4 @@ if __name__ == '__main__':
                 callback=eval_callback,
                 log_interval=100)
 
-
+    model.save('final_model.zip')

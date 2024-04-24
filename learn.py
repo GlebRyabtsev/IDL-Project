@@ -32,6 +32,7 @@ from gym_pybullet_drones.envs.HoverAviary import HoverAviary
 from gym_pybullet_drones.envs.MultiHoverAviary import MultiHoverAviary
 from gym_pybullet_drones.utils.utils import sync, str2bool
 from gym_pybullet_drones.utils.enums import ObservationType, ActionType
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 DEFAULT_GUI = True
 DEFAULT_RECORD_VIDEO = False
@@ -39,7 +40,7 @@ DEFAULT_OUTPUT_FOLDER = 'results'
 DEFAULT_COLAB = False
 
 DEFAULT_OBS = ObservationType('kin') # 'kin' or 'rgb'
-DEFAULT_ACT = ActionType('one_d_rpm') # 'rpm' or 'pid' or 'vel' or 'one_d_rpm' or 'one_d_pid'
+DEFAULT_ACT = ActionType('rpm') # 'rpm' or 'pid' or 'vel' or 'one_d_rpm' or 'one_d_pid'
 DEFAULT_AGENTS = 2
 DEFAULT_MA = False
 
@@ -52,10 +53,8 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
     if not multiagent:
         train_env = make_vec_env(HoverAviary,
                                  env_kwargs=dict(obs=DEFAULT_OBS, act=DEFAULT_ACT),
-                                 n_envs=1,
-                                 seed=0
-                                 )
-        eval_env = HoverAviary(obs=DEFAULT_OBS, act=DEFAULT_ACT)
+                                 n_envs=1)
+        eval_env = HoverAviary(obs=DEFAULT_OBS, act=DEFAULT_ACT, gui=True)
     else:
         train_env = make_vec_env(MultiHoverAviary,
                                  env_kwargs=dict(num_drones=DEFAULT_AGENTS, obs=DEFAULT_OBS, act=DEFAULT_ACT),
@@ -88,8 +87,9 @@ def run(multiagent=DEFAULT_MA, output_folder=DEFAULT_OUTPUT_FOLDER, gui=DEFAULT_
                                  log_path=filename+'/',
                                  eval_freq=int(1000),
                                  deterministic=True,
-                                 render=False)
-    model.learn(total_timesteps=int(1e7) if local else int(1e2), # shorter training in GitHub Actions pytest
+                                 render=True,
+                                 n_eval_episodes=1)
+    model.learn(total_timesteps=int(1e5) if local else int(1e2), # shorter training in GitHub Actions pytest
                 callback=eval_callback,
                 log_interval=100)
 
