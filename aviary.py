@@ -31,7 +31,7 @@ class Aviary(BaseRLAviary):
 
         # self.Kp = np.array((-4.0e-3, -4.0e-3, -8.0e-5))
         # self.Kd = np.array((-1.2e-4, -1.2e-4, -2.0e-5))
-        self.INITIAL_POS_RANGE = ((-0.0, 0.0), (-0.0, 0.0), (1.0,1.0))
+        self.INITIAL_POS_RANGE = ((-1.0, 1.0), (-1.0, 1.0), (1.0, 3.0))
         self.INITIAL_ANG_RANGE = ((-0, 0), (-0, 0), (-0, 0))
 
         self.INITIAL_VEL_RANGE = ((-.0, .0),
@@ -143,7 +143,7 @@ class Aviary(BaseRLAviary):
     def _preprocessAction(self, action):
         self.action_buffer.append(action)
         rpm = np.zeros((1, 4))
-        rpm[0] = np.array(self.HOVER_RPM * (1 + 0.05 * action))  # todo: this coeff is sus
+        rpm[0] = np.array(self.HOVER_RPM * (1 + 0.05 * action[0]))  # todo: this coeff is sus
         return rpm
 
     def _sample_initial_state(self):
