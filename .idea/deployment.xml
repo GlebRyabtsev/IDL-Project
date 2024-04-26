@@ -1,22 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="gleb@34.0.84.91:22 agent">
+      <paths name="TAUV Training (Gleb)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="gleb@34.0.84.91:22 agent (2)">
+      <paths name="gleb@rjdesk.wifi.local.cmu.edu:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/gleb/IDL-Final-Project" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="gleb@rjdesk.wifi.local.cmu.edu:22 password (2)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="gleb@34.0.84.91:22 agent (3)">
+      <paths name="gleb@rjdesk.wifi.local.cmu.edu:22 password (3)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="gleb@rjdesk.wifi.local.cmu.edu:22 password (4)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="tartanauv@rjdesk.wifi.local.cmu.edu:22 password">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />

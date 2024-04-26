@@ -1,3 +1,4 @@
+import math
 import random
 import time
 
@@ -26,13 +27,14 @@ class Aviary(BaseRLAviary):
                  record=False,
                  obs: ObservationType = ObservationType.KIN,
                  act: ActionType = ActionType.RPM,
-                 seed: int = 0
+                 seed: int = 0,
+                 episode_length: int = 8
                  ):
 
         # self.Kp = np.array((-4.0e-3, -4.0e-3, -8.0e-5))
         # self.Kd = np.array((-1.2e-4, -1.2e-4, -2.0e-5))
         self.INITIAL_POS_RANGE = ((-1.0, 1.0), (-1.0, 1.0), (1.0, 3.0))
-        self.INITIAL_ANG_RANGE = ((-0, 0), (-0, 0), (-0, 0))
+        self.INITIAL_ANG_RANGE = ((-0.1, 0.1), (-0.1, 0.1), (-math.pi, math.pi))
 
         self.INITIAL_VEL_RANGE = ((-.0, .0),
                                   (-.0, .0),
@@ -42,7 +44,7 @@ class Aviary(BaseRLAviary):
         #                               (-1.0, 1.0))
         self.INITIAL_ANG_VEL_RANGE = ((0.0, 0.0), (0.0, 0.0), (0.0, 0.0))
         self.TARGET_POS = np.array((0.0,0.0,2.0))
-        self.EPISODE_LEN_SEC = 8
+        self.EPISODE_LEN_SEC = episode_length
         self._rng = np.random.default_rng(seed)
 
         super().__init__(drone_model=drone_model,
