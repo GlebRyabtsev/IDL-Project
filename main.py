@@ -32,15 +32,16 @@ if __name__ == '__main__':
                              env_kwargs=dict(
                                  obs=OBSERVATION_TYPE,
                                  act=ACTION_TYPE,
-                                 gui=False
+                                 gui=False,
+                                 episode_length=12
                              ))
 
     eval_env = Aviary(obs=OBSERVATION_TYPE,
-                      act=ACTION_TYPE, gui=True)
+                      act=ACTION_TYPE, gui=False)
 
     model = PPO('MlpPolicy', train_env, verbose=1, policy_kwargs=POLICIES[args.policy_name])
     # model = PPO.load('best_models_1/best_model.zip', train_env)
-    REWARD_THRESHOLD = 1000
+    REWARD_THRESHOLD = -1
 
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=REWARD_THRESHOLD,
                                                      verbose=False)
@@ -49,10 +50,10 @@ if __name__ == '__main__':
                                  verbose=True,
                                  best_model_save_path=f'best_models/{args.run_name}/{args.policy_name}/',
                                  log_path=f'logs/{args.run_name}/{args.policy_name}/',
-                                 eval_freq=5000,
+                                 eval_freq=10000,
                                  deterministic=True,
-                                 render=True,
-                                 n_eval_episodes=5)
+                                 # render=True,
+                                 n_eval_episodes=15)
 
     model.learn(total_timesteps=int(args.timesteps),
                 callback=eval_callback,

@@ -33,8 +33,8 @@ class Aviary(BaseRLAviary):
 
         # self.Kp = np.array((-4.0e-3, -4.0e-3, -8.0e-5))
         # self.Kd = np.array((-1.2e-4, -1.2e-4, -2.0e-5))
-        self.INITIAL_POS_RANGE = ((-1.0, 1.0), (-1.0, 1.0), (1.0, 3.0))
-        self.INITIAL_ANG_RANGE = ((-0.1, 0.1), (-0.1, 0.1), (-math.pi, math.pi))
+        # self.INITIAL_POS_RANGE = ((-1.0, 1.0), (-1.0, 1.0), (1.0, 3.0))
+        self.INITIAL_ANG_RANGE = ((-0.0, 0.0), (-0.0, 0.0), (0 ,0))
 
         self.INITIAL_VEL_RANGE = ((-.0, .0),
                                   (-.0, .0),
@@ -43,7 +43,7 @@ class Aviary(BaseRLAviary):
         #                               (-1.0, 1.0),
         #                               (-1.0, 1.0))
         self.INITIAL_ANG_VEL_RANGE = ((0.0, 0.0), (0.0, 0.0), (0.0, 0.0))
-        self.TARGET_POS = np.array((0.0,0.0,2.0))
+        self.TARGET_POS = np.array((0.0, 0.0, 2.0))
         self.EPISODE_LEN_SEC = episode_length
         self._rng = np.random.default_rng(seed)
 
@@ -150,7 +150,12 @@ class Aviary(BaseRLAviary):
 
     def _sample_initial_state(self):
         rpy = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_ANG_RANGE]
-        pos = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_POS_RANGE]
+        theta = self._rng.random() * (2 * math.pi)
+        phi = self._rng.random() * (2 * math.pi)
+        dx = math.sin(theta)
+        dy = math.cos(theta)
+        dz = math.sin(phi)
+        pos = [self.TARGET_POS[0] + dx, self.TARGET_POS[1] + dy, self.TARGET_POS[2] + dz]
         vel = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_VEL_RANGE]
         ang_vel = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_ANG_VEL_RANGE]
         return pos, rpy, vel, ang_vel
@@ -217,13 +222,15 @@ class Aviary(BaseRLAviary):
         quat = state[3:7]
         ang_vel = state[13:16]
         vel = state[10:13]
+        rot = R.from_quat(quat)
+        a = rot.as_rotvec()
 
         state = self._getDroneStateVector(0)
-        ret = max(0, 2 - np.linalg.norm(self.TARGET_POS-state[0:3])**4)
-        return ret
-
-        # cost = 4e-1 * np.linalg.norm(pos - self.TARGET_POS) + 3e-2 * np.linalg.norm(ang_vel) + 5e-2 * np.linalg.norm(vel)
-        # return -cost
+        cost = (np.linalg.norm(pos - self.TARGET_POS)
+                + 0.1 * np.linalg.norm(a)
+                + 0.1 * np.linalg.norm(ang_vel)
+                + 0.1 * np.linalg.norm(vel))
+        return -cost
 
     def _computeTerminated(self):
         state = self._getDroneStateVector(0)
@@ -232,6 +239,7 @@ class Aviary(BaseRLAviary):
             return True
         else:
             return False
+
     def _computeTruncated(self):
         """Computes the current truncated value.
 
@@ -242,11 +250,11 @@ class Aviary(BaseRLAviary):
 
         """
         state = self._getDroneStateVector(0)
-        if (abs(state[0]) > 1.5 or abs(state[1]) > 1.5 or state[2] > 3.5 # Truncate when the drone is too far away
-                or abs(state[7]) > .4 or abs(state[8]) > .4 # Truncate when the drone is too tilted
+        if (abs(state[0]) > 1.5 or abs(state[1]) > 1.5 or state[2] > 3.5  # Truncate when the drone is too far away
+                or abs(state[7]) > .4 or abs(state[8]) > .4  # Truncate when the drone is too tilted
         ):
             return True
-        if self.step_counter/self.PYB_FREQ > self.EPISODE_LEN_SEC:
+        if self.step_counter / self.PYB_FREQ > self.EPISODE_LEN_SEC:
             return True
         else:
             return False
@@ -262,4 +270,4 @@ class Aviary(BaseRLAviary):
             Dummy value.
 
         """
-        return {"answer": 42} #### Calculated by the Deep Thought supercomputer in 7.5M years
+        return {"answer": 42}  #### Calculated by the Deep Thought supercomputer in 7.5M years
