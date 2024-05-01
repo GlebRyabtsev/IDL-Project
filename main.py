@@ -22,6 +22,8 @@ if __name__ == '__main__':
     parser.add_argument('--policy_name', action='store', required=True)
     parser.add_argument('--run_name', action='store', required=True)
     parser.add_argument('--timesteps', action='store', required=True)
+    parser.add_argument('--gui', action='store_true')
+    parser.add_argument('--eval_freq', action='store', default=10000)
 
     args = parser.parse_args()
 
@@ -37,11 +39,11 @@ if __name__ == '__main__':
                              ))
 
     eval_env = Aviary(obs=OBSERVATION_TYPE,
-                      act=ACTION_TYPE, gui=False)
+                      act=ACTION_TYPE, gui=args.gui)
 
     model = PPO('MlpPolicy', train_env, verbose=1, policy_kwargs=POLICIES[args.policy_name])
     # model = PPO.load('best_models_1/best_model.zip', train_env)
-    REWARD_THRESHOLD = -1
+    REWARD_THRESHOLD = 1000
 
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=REWARD_THRESHOLD,
                                                      verbose=False)
@@ -50,7 +52,7 @@ if __name__ == '__main__':
                                  verbose=True,
                                  best_model_save_path=f'best_models/{args.run_name}/{args.policy_name}/',
                                  log_path=f'logs/{args.run_name}/{args.policy_name}/',
-                                 eval_freq=10000,
+                                 eval_freq=int(args.eval_freq),
                                  deterministic=True,
                                  # render=True,
                                  n_eval_episodes=15)

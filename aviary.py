@@ -28,7 +28,8 @@ class Aviary(BaseRLAviary):
                  obs: ObservationType = ObservationType.KIN,
                  act: ActionType = ActionType.RPM,
                  seed: int = 0,
-                 episode_length: int = 8
+                 episode_length: int = 8,
+                 initial_pos = None
                  ):
 
         # self.Kp = np.array((-4.0e-3, -4.0e-3, -8.0e-5))
@@ -46,6 +47,7 @@ class Aviary(BaseRLAviary):
         self.TARGET_POS = np.array((0.0, 0.0, 2.0))
         self.EPISODE_LEN_SEC = episode_length
         self._rng = np.random.default_rng(seed)
+        self.initial_pos = initial_pos
 
         super().__init__(drone_model=drone_model,
                          num_drones=1,
@@ -155,7 +157,10 @@ class Aviary(BaseRLAviary):
         dx = math.sin(theta)
         dy = math.cos(theta)
         dz = math.sin(phi)
-        pos = [self.TARGET_POS[0] + dx, self.TARGET_POS[1] + dy, self.TARGET_POS[2] + dz]
+        if not self.initial_pos:
+            pos = [self.TARGET_POS[0] + dx, self.TARGET_POS[1] + dy, self.TARGET_POS[2] + dz]
+        else:
+            pos = self.initial_pos
         vel = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_VEL_RANGE]
         ang_vel = [self._rng.random() * (upper - lower) + lower for (lower, upper) in self.INITIAL_ANG_VEL_RANGE]
         return pos, rpy, vel, ang_vel
@@ -187,7 +192,7 @@ class Aviary(BaseRLAviary):
         p.setAdditionalSearchPath(pybullet_data.getDataPath(), physicsClientId=self.CLIENT)
         #### Load ground plane, drone and obstacles models #########
         self.PLANE_ID = p.loadURDF("plane.urdf", physicsClientId=self.CLIENT)
-
+        p.loadURDF('sphere2.urdf', [0, 0, 2], globalScaling=0.1, physicsClientId=self.CLIENT, useFixedBase=True)
         pos, rpy, vel, ang_vel = self._sample_initial_state()
 
         self.DRONE_IDS = np.array(
@@ -227,10 +232,11 @@ class Aviary(BaseRLAviary):
 
         state = self._getDroneStateVector(0)
         cost = (np.linalg.norm(pos - self.TARGET_POS)
-                + 0.1 * np.linalg.norm(a)
-                + 0.1 * np.linalg.norm(ang_vel)
-                + 0.1 * np.linalg.norm(vel))
-        return -cost
+                + 0.3 * (np.linalg.norm(a)
+                        + np.linalg.norm(ang_vel)
+                        + np.linalg.norm(vel))
+                / np.linalg.norm(pos - self.TARGET_POS))
+        return max(0, 2-cost)
 
     def _computeTerminated(self):
         state = self._getDroneStateVector(0)
